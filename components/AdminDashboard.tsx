@@ -91,7 +91,10 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
     saveStoredData(data);
     setTimeout(() => setIsSaving(false), 800);
   };
-
+const handleSaveConfig = async (updatedData: AppData) => {
+  setData(updatedData);
+  saveStoredData(updatedData);
+};
   const cancelImport = useCallback(() => {
     if (importTimeoutRef.current) clearTimeout(importTimeoutRef.current);
     setImportStatus('idle');
