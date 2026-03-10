@@ -810,7 +810,7 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
           </div>
         );
       case 'config':
-        return <AdminConfigEditor appData={data} />;
+  return <AdminConfigEditor appData={data} onSave={handleSaveConfig} />;
       default:
         return <div>Tab not found.</div>;
     }
