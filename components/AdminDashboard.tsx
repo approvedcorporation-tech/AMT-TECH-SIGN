@@ -1,3 +1,4 @@
+import { loadCloudData, saveCloudData } from '../services/cloudStorageService';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { AppData, ViewMode, Announcement, Event, Page, WidgetConfig, GridItemConfig, CustomWidgetDefinition, LoginLogEntry } from '../types';
 import { getStoredData, saveStoredData } from '../services/storageService';
@@ -54,9 +55,15 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
   const designerContainerRef = useRef<HTMLDivElement>(null);
   const [newWidgetDef, setNewWidgetDef] = useState<Partial<CustomWidgetDefinition>>({ refreshSeconds: 60 });
 
-  const refreshFromStorage = useCallback(() => {
+  const refreshFromStorage = useCallback(async () => {
+  const cloudData = await loadCloudData();
+
+  if (cloudData) {
+    setData(cloudData);
+  } else {
     setData(getStoredData());
-  }, []);
+  }
+}, []);
 
   useEffect(() => {
     refreshFromStorage();
@@ -86,14 +93,18 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
       return () => resizeObserver.disconnect();
   }, [editingLayoutPageId]);
 
-  const handleSave = () => {
-    setIsSaving(true);
-    saveStoredData(data);
-    setTimeout(() => setIsSaving(false), 800);
-  };
+  const handleSave = async () => {
+  setIsSaving(true);
+
+  saveStoredData(data);
+  await saveCloudData(data);
+
+  setTimeout(() => setIsSaving(false), 800);
+};
 const handleSaveConfig = async (updatedData: AppData) => {
   setData(updatedData);
   saveStoredData(updatedData);
+  await saveCloudData(updatedData);
 };
   const cancelImport = useCallback(() => {
     if (importTimeoutRef.current) clearTimeout(importTimeoutRef.current);
