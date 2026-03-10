@@ -17,10 +17,20 @@ export const loadCloudData = async (): Promise<AppData | null> => {
 };
 
 export const saveCloudData = async (appData: AppData): Promise<void> => {
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('app_config')
-    .update({ data: appData })
-    .eq('id', 1);
+    .upsert(
+      {
+        id: 1,
+        data: appData,
+      },
+      {
+        onConflict: 'id',
+      }
+    )
+    .select();
+
+  console.log('saveCloudData result:', data, error);
 
   if (error) {
     console.error('Failed to save cloud data', error);
