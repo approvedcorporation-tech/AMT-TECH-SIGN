@@ -96,15 +96,33 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
   const handleSave = async () => {
   setIsSaving(true);
 
-  saveStoredData(data);
-  await saveCloudData(data);
+  try {
+    saveStoredData(data);
 
-  setTimeout(() => setIsSaving(false), 800);
+    await saveCloudData(data);
+
+    console.log("Cloud save success");
+  } catch (error) {
+    console.error("Cloud save failed:", error);
+    alert("Cloud save failed. Check console.");
+  } finally {
+    setTimeout(() => setIsSaving(false), 800);
+  }
 };
+
 const handleSaveConfig = async (updatedData: AppData) => {
-  setData(updatedData);
-  saveStoredData(updatedData);
-  await saveCloudData(updatedData);
+  try {
+    setData(updatedData);
+
+    saveStoredData(updatedData);
+
+    await saveCloudData(updatedData);
+
+    console.log("Cloud config save success");
+  } catch (error) {
+    console.error("Cloud config save failed:", error);
+    alert("Cloud config save failed. Check console.");
+  }
 };
   const cancelImport = useCallback(() => {
     if (importTimeoutRef.current) clearTimeout(importTimeoutRef.current);
