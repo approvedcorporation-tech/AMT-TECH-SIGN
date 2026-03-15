@@ -6,7 +6,7 @@ export const loadCloudData = async (): Promise<AppData | null> => {
     .from('app_config')
     .select('data')
     .eq('id', 1)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Failed to load cloud data', error);
