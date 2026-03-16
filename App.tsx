@@ -6,7 +6,7 @@ import AppErrorBoundary from './components/AppErrorBoundary';
 import { SimpleAuthProvider } from './context/SimpleAuthContext';
 import AdminGuard from './components/AdminGuard';
 import { saveStoredData, getStoredData } from './services/storageService';
-import { loadCloudData } from './src/services/cloudStorageService';
+import { loadCloudData } from './services/cloudStorageService';
 
 /**
  * ThemeSync manages the global CSS variables for the entire application.
