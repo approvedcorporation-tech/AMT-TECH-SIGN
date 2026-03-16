@@ -6,7 +6,7 @@ export const loadCloudData = async (): Promise<AppData | null> => {
     .from('app_config')
     .select('data')
     .eq('id', 1)
-    .single();
+    .maybeSingle();
 
   if (error) {
     console.error('Failed to load cloud data', error);
@@ -19,8 +19,13 @@ export const loadCloudData = async (): Promise<AppData | null> => {
 export const saveCloudData = async (appData: AppData): Promise<void> => {
   const { error } = await supabase
     .from('app_config')
-    .update({ data: appData })
-    .eq('id', 1);
+    .upsert(
+      {
+        id: 1,
+        data: appData,
+      },
+      { onConflict: 'id' }
+    );
 
   if (error) {
     console.error('Failed to save cloud data', error);
