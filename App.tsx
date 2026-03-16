@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import KioskView from './components/KioskView';
 import AdminDashboard from './components/AdminDashboard';
-import { ViewMode, AppData } from './types';
+import { ViewMode } from './types';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import { SimpleAuthProvider } from './context/SimpleAuthContext';
 import AdminGuard from './components/AdminGuard';
-import { getStoredData } from './services/storageService';
+import { saveStoredData, getStoredData } from './services/storageService';
+import { loadCloudData } from './src/services/cloudStorageService';
 
 /**
  * ThemeSync manages the global CSS variables for the entire application.
@@ -17,7 +17,7 @@ const ThemeSync: React.FC = () => {
     const data = getStoredData();
     const theme = data.theme;
     const root = document.documentElement;
-    
+
     root.style.setProperty('--accent-color', theme.accentColor);
     root.style.setProperty('--gradient-start', theme.gradientStart);
     root.style.setProperty('--gradient-end', theme.gradientEnd);
@@ -36,36 +36,62 @@ const ThemeSync: React.FC = () => {
 
 const App: React.FC = () => {
   const [viewMode, setViewMode] = useState<ViewMode>(ViewMode.KIOSK);
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    const bootstrap = async () => {
+      try {
+        const cloudData = await loadCloudData();
+
+        if (cloudData) {
+          saveStoredData(cloudData);
+          console.log('Cloud bootstrap success', cloudData);
+        } else {
+          console.log('No cloud data found, using local/default data');
+        }
+      } catch (error) {
+        console.error('App bootstrap cloud load failed', error);
+      } finally {
+        setIsReady(true);
+      }
+    };
+
+    bootstrap();
+  }, []);
 
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('mode') === 'admin') {
-        setViewMode(ViewMode.ADMIN);
+      setViewMode(ViewMode.ADMIN);
     }
   }, []);
 
   const toggleView = (mode: ViewMode) => {
     setViewMode(mode);
   };
-  
+
   const handleLogoClick = (e: React.MouseEvent) => {
-      if (e.detail === 3) {
-          toggleView(ViewMode.ADMIN);
-      }
+    if (e.detail === 3) {
+      toggleView(ViewMode.ADMIN);
+    }
   };
+
+  if (!isReady) {
+    return <div className="min-h-screen bg-black" />;
+  }
 
   return (
     <AppErrorBoundary>
       <SimpleAuthProvider>
         <ThemeSync />
         {viewMode === ViewMode.KIOSK ? (
-            <div onClick={handleLogoClick}>
-                 <KioskView onExit={() => toggleView(ViewMode.ADMIN)} />
-            </div>
+          <div onClick={handleLogoClick}>
+            <KioskView onExit={() => toggleView(ViewMode.ADMIN)} />
+          </div>
         ) : (
-            <AdminGuard>
-              <AdminDashboard changeView={toggleView} />
-            </AdminGuard>
+          <AdminGuard>
+            <AdminDashboard changeView={toggleView} />
+          </AdminGuard>
         )}
       </SimpleAuthProvider>
     </AppErrorBoundary>
