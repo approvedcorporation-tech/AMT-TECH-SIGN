@@ -55,26 +55,27 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
   const designerContainerRef = useRef<HTMLDivElement>(null);
   const [newWidgetDef, setNewWidgetDef] = useState<Partial<CustomWidgetDefinition>>({ refreshSeconds: 60 });
 
-  const refreshFromStorage = useCallback(async () => {
+const refreshFromStorage = useCallback(async () => {
   const cloudData = await loadCloudData();
 
   if (cloudData) {
     setData(cloudData);
+    saveStoredData(cloudData);
   } else {
     setData(getStoredData());
   }
 }, []);
 
   useEffect(() => {
-    refreshFromStorage();
-    const handleLogUpdate = () => setSystemLogs(getLogs());
-    window.addEventListener('hardy-log-update', handleLogUpdate);
-    window.addEventListener('hardy-storage-update', refreshFromStorage);
-    return () => {
-      window.removeEventListener('hardy-log-update', handleLogUpdate);
-      window.removeEventListener('hardy-storage-update', refreshFromStorage);
-    };
-  }, [refreshFromStorage]);
+  refreshFromStorage();
+  const handleLogUpdate = () => setSystemLogs(getLogs());
+
+  window.addEventListener('hardy-log-update', handleLogUpdate);
+
+  return () => {
+    window.removeEventListener('hardy-log-update', handleLogUpdate);
+  };
+}, [refreshFromStorage]);
 
   useEffect(() => {
     if (activeTab === 'security') {
@@ -93,18 +94,20 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
       return () => resizeObserver.disconnect();
   }, [editingLayoutPageId]);
 
-  const handleSave = async () => {
+  cconst handleSave = async () => {
   setIsSaving(true);
 
   try {
-    saveStoredData(data);
+    const snapshot = structuredClone(data);
 
-    await saveCloudData(data);
+    await saveCloudData(snapshot);
+    saveStoredData(snapshot);
+    setData(snapshot);
 
-    console.log("Cloud save success");
+    console.log('Cloud save success', snapshot);
   } catch (error) {
-    console.error("Cloud save failed:", error);
-    alert("Cloud save failed. Check console.");
+    console.error('Cloud save failed:', error);
+    alert('Cloud save failed. Check console.');
   } finally {
     setTimeout(() => setIsSaving(false), 800);
   }
@@ -112,16 +115,16 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
 
 const handleSaveConfig = async (updatedData: AppData) => {
   try {
-    setData(updatedData);
+    const snapshot = structuredClone(updatedData);
 
-    saveStoredData(updatedData);
+    await saveCloudData(snapshot);
+    saveStoredData(snapshot);
+    setData(snapshot);
 
-    await saveCloudData(updatedData);
-
-    console.log("Cloud config save success");
+    console.log('Cloud config save success', snapshot);
   } catch (error) {
-    console.error("Cloud config save failed:", error);
-    alert("Cloud config save failed. Check console.");
+    console.error('Cloud config save failed:', error);
+    alert('Cloud config save failed. Check console.');
   }
 };
   const cancelImport = useCallback(() => {
