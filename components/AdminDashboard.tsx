@@ -94,7 +94,7 @@ const refreshFromStorage = useCallback(async () => {
       return () => resizeObserver.disconnect();
   }, [editingLayoutPageId]);
 
-  cconst handleSave = async () => {
+  const handleSave = async () => {
   setIsSaving(true);
 
   try {
