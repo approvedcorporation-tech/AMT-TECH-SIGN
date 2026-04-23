@@ -5,8 +5,7 @@ import { ViewMode } from './types';
 import AppErrorBoundary from './components/AppErrorBoundary';
 import { SimpleAuthProvider } from './context/SimpleAuthContext';
 import AdminGuard from './components/AdminGuard';
-import { saveStoredData, getStoredData } from './services/storageService';
-import { loadCloudData } from './services/cloudStorageService';
+import { getStoredData, loadAppData } from './services/storageService';
 
 /**
  * ThemeSync manages the global CSS variables for the entire application.
@@ -41,16 +40,9 @@ const App: React.FC = () => {
   useEffect(() => {
     const bootstrap = async () => {
       try {
-        const cloudData = await loadCloudData();
-
-        if (cloudData) {
-          saveStoredData(cloudData);
-          console.log('Cloud bootstrap success', cloudData);
-        } else {
-          console.log('No cloud data found, using local/default data');
-        }
+        await loadAppData();
       } catch (error) {
-        console.error('App bootstrap cloud load failed', error);
+        console.error('App bootstrap load failed', error);
       } finally {
         setIsReady(true);
       }

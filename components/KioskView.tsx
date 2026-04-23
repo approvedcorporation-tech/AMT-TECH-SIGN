@@ -2,7 +2,8 @@
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { AppData, WeatherData, Page } from '../types';
 import { Clock, Calendar, CloudSun, AlertCircle, Settings, Sun, Cloud, CloudSun as CloudSunIcon, CloudRain, CloudSnow, Phone, Globe, Instagram, Twitter, ChevronLeft, ChevronRight, LayoutTemplate, ShieldAlert } from 'lucide-react';
-import { getStoredData } from '../services/storageService';
+import { getStoredData, saveStoredData } from '../services/storageService';
+import { loadCloudData } from '../services/cloudStorageService';
 import { GridRenderer } from './WidgetSystem';
 
 interface KioskViewProps {
@@ -17,6 +18,7 @@ const EVENTS_PER_SET = 4;
 
 const KioskView: React.FC<KioskViewProps> = ({ onExit }) => {
   const [data, setData] = useState<AppData>(getStoredData());
+  const dataHashRef = useRef(JSON.stringify(getStoredData()));
   const [currentTime, setCurrentTime] = useState(new Date());
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
   
@@ -41,7 +43,11 @@ const KioskView: React.FC<KioskViewProps> = ({ onExit }) => {
 
   // Load Data & Listen for Updates
   useEffect(() => {
-    const handleStorageUpdate = () => setData(getStoredData());
+    const handleStorageUpdate = () => {
+      const latest = getStoredData();
+      dataHashRef.current = JSON.stringify(latest);
+      setData(latest);
+    };
     window.addEventListener('hardy-storage-update', handleStorageUpdate);
     const handleResize = () => setWindowWidth(window.innerWidth);
     window.addEventListener('resize', handleResize);
@@ -49,6 +55,28 @@ const KioskView: React.FC<KioskViewProps> = ({ onExit }) => {
         window.removeEventListener('hardy-storage-update', handleStorageUpdate);
         window.removeEventListener('resize', handleResize);
     };
+  }, []);
+
+  useEffect(() => {
+    const pollCloudConfig = async () => {
+      try {
+        const cloudData = await loadCloudData();
+        if (!cloudData) return;
+
+        const incomingHash = JSON.stringify(cloudData);
+        if (incomingHash === dataHashRef.current) return;
+
+        dataHashRef.current = incomingHash;
+        saveStoredData(cloudData);
+        setData(cloudData);
+      } catch (error) {
+        console.error('Kiosk poll failed', error);
+      }
+    };
+
+    pollCloudConfig();
+    const pollInterval = setInterval(pollCloudConfig, 15000);
+    return () => clearInterval(pollInterval);
   }, []);
 
   // Clock
