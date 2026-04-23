@@ -1,7 +1,6 @@
-import { loadCloudData, saveCloudData } from '../services/cloudStorageService';
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { AppData, ViewMode, Announcement, Event, Page, WidgetConfig, GridItemConfig, CustomWidgetDefinition, LoginLogEntry } from '../types';
-import { getStoredData, saveStoredData } from '../services/storageService';
+import { getStoredData, loadAppData, saveAppData } from '../services/storageService';
 import { rewriteAnnouncement, generateTheme, analyzeNewsletter } from '../services/geminiService';
 import { extractTextFromPdf } from '../services/pdfService';
 import { safeStorage } from '../lib/safeStorage';
@@ -56,14 +55,8 @@ const AdminDashboard: React.FC<AdminProps> = ({ changeView }) => {
   const [newWidgetDef, setNewWidgetDef] = useState<Partial<CustomWidgetDefinition>>({ refreshSeconds: 60 });
 
 const refreshFromStorage = useCallback(async () => {
-  const cloudData = await loadCloudData();
-
-  if (cloudData) {
-    setData(cloudData);
-    saveStoredData(cloudData);
-  } else {
-    setData(getStoredData());
-  }
+  const latestData = await loadAppData();
+  setData(latestData);
 }, []);
 
   useEffect(() => {
@@ -100,8 +93,7 @@ const refreshFromStorage = useCallback(async () => {
   try {
     const snapshot = structuredClone(data);
 
-    await saveCloudData(snapshot);
-    saveStoredData(snapshot);
+    await saveAppData(snapshot);
     setData(snapshot);
 
     console.log('Cloud save success', snapshot);
@@ -117,8 +109,7 @@ const handleSaveConfig = async (updatedData: AppData) => {
   try {
     const snapshot = structuredClone(updatedData);
 
-    await saveCloudData(snapshot);
-    saveStoredData(snapshot);
+    await saveAppData(snapshot);
     setData(snapshot);
 
     console.log('Cloud config save success', snapshot);

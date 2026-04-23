@@ -2,6 +2,7 @@
 import { AppData, Announcement, Event as AppEvent, Page } from '../types';
 import { addLog } from './logService';
 import { safeStorage } from '../lib/safeStorage';
+import { loadCloudData, saveCloudData } from './cloudStorageService';
 
 const STORAGE_KEY = 'HARDY_SIGNAGE_DATA';
 
@@ -164,4 +165,23 @@ export const saveStoredData = (data: AppData): void => {
   } catch (error) {
     console.error("Failed to save data", error);
   }
+};
+
+export const loadAppData = async (): Promise<AppData> => {
+  try {
+    const cloudData = await loadCloudData();
+    if (cloudData) {
+      saveStoredData(cloudData);
+      return cloudData;
+    }
+  } catch (error) {
+    console.error('Cloud load failed, falling back to local data', error);
+  }
+
+  return getStoredData();
+};
+
+export const saveAppData = async (data: AppData): Promise<void> => {
+  await saveCloudData(data);
+  saveStoredData(data);
 };
